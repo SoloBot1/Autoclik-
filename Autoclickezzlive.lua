@@ -1,54 +1,56 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
--- Настройки цветов
+-- Стиль Nur-Sultan
 local colors = {
-    background = Color3.fromRGB(25, 25, 35),
-    header = Color3.fromRGB(20, 20, 30),
-    button = Color3.fromRGB(40, 40, 60),
-    buttonHover = Color3.fromRGB(60, 60, 90),
-    toggleOn = Color3.fromRGB(85, 255, 127),
-    toggleOff = Color3.fromRGB(255, 85, 85),
-    accent = Color3.fromRGB(0, 162, 255),
-    text = Color3.fromRGB(240, 240, 255)
+    background = Color3.fromRGB(30, 35, 45),
+    header = Color3.fromRGB(20, 25, 35),
+    button = Color3.fromRGB(50, 55, 70),
+    buttonHover = Color3.fromRGB(70, 75, 90),
+    toggleOn = Color3.fromRGB(0, 180, 120),  -- Бирюзовый
+    toggleOff = Color3.fromRGB(180, 50, 50), -- Красный
+    text = Color3.fromRGB(240, 240, 240),
+    accent = Color3.fromRGB(0, 150, 200)     -- Голубой акцент
 }
 
 -- Создание GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "PremiumAutoClicker"
-ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "NurAutoClicker"
+ScreenGui.Parent = game.CoreGui
 
--- Основной фрейм
+-- Главный контейнер с возможностью перемещения
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 350, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+MainFrame.Size = UDim2.new(0, 340, 0, 380)
+MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = colors.background
 MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Selectable = true
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
--- Скругление углов
+-- Скругленные углы
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 12)
 UICorner.Parent = MainFrame
 
--- Тень
+-- Тень с акцентным цветом
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Color = colors.accent
 UIStroke.Thickness = 2
 UIStroke.Transparency = 0.7
 UIStroke.Parent = MainFrame
 
--- Заголовок
+-- Заголовок в стиле Nur-Sultan
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.BackgroundColor3 = colors.header
-Title.Text = "PREMIUM AUTO CLICKER"
+Title.Text = "NUR AUTO CLICKER"
 Title.TextColor3 = colors.text
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -61,48 +63,18 @@ TitleCorner.Parent = Title
 
 -- Кнопка закрытия
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 34, 0, 34)
-CloseButton.Position = UDim2.new(1, -40, 0, 8)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70)
+CloseButton.Size = UDim2.new(0, 40, 0, 40)
+CloseButton.Position = UDim2.new(1, -45, 0, 5)
+CloseButton.BackgroundColor3 = colors.button
 CloseButton.Text = "×"
 CloseButton.TextColor3 = colors.text
 CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 22
+CloseButton.TextSize = 24
 CloseButton.Parent = Title
 
 local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 17)
+CloseCorner.CornerRadius = UDim.new(0, 20)
 CloseCorner.Parent = CloseButton
-
--- Кнопка сворачивания
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Size = UDim2.new(0, 34, 0, 34)
-MinimizeButton.Position = UDim2.new(1, -80, 0, 8)
-MinimizeButton.BackgroundColor3 = colors.button
-MinimizeButton.Text = "_"
-MinimizeButton.TextColor3 = colors.text
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.TextSize = 18
-MinimizeButton.Parent = Title
-
-local MinimizeCorner = Instance.new("UICorner")
-MinimizeCorner.CornerRadius = UDim.new(0, 17)
-MinimizeCorner.Parent = MinimizeButton
-
--- Кнопка редактирования
-local EditButton = Instance.new("TextButton")
-EditButton.Size = UDim2.new(0, 34, 0, 34)
-EditButton.Position = UDim2.new(1, -120, 0, 8)
-EditButton.BackgroundColor3 = colors.button
-EditButton.Text = "✎"
-EditButton.TextColor3 = colors.text
-EditButton.Font = Enum.Font.GothamBold
-EditButton.TextSize = 16
-EditButton.Parent = Title
-
-local EditCorner = Instance.new("UICorner")
-EditCorner.CornerRadius = UDim.new(0, 17)
-EditCorner.Parent = EditButton
 
 -- Контейнер содержимого
 local ContentFrame = Instance.new("Frame")
@@ -147,7 +119,7 @@ XBox.Size = UDim2.new(0, 100, 0, 30)
 XBox.Position = UDim2.new(0, 70, 0, 45)
 XBox.BackgroundColor3 = colors.button
 XBox.TextColor3 = colors.text
-XBox.PlaceholderText = "X pos"
+XBox.PlaceholderText = "X position"
 XBox.Text = "0"
 XBox.Font = Enum.Font.Gotham
 XBox.Parent = PositionSection
@@ -167,7 +139,7 @@ YBox.Size = UDim2.new(0, 100, 0, 30)
 YBox.Position = UDim2.new(0, 70, 0, 85)
 YBox.BackgroundColor3 = colors.button
 YBox.TextColor3 = colors.text
-YBox.PlaceholderText = "Y pos"
+YBox.PlaceholderText = "Y position"
 YBox.Text = "0"
 YBox.Font = Enum.Font.Gotham
 YBox.Parent = PositionSection
@@ -175,12 +147,16 @@ YBox.Parent = PositionSection
 -- Кнопка установки позиции
 local SetPosButton = Instance.new("TextButton")
 SetPosButton.Size = UDim2.new(0, 180, 0, 35)
-SetPosButton.Position = UDim2.new(0, 170, 0, 45)
+SetPosButton.Position = UDim2.new(0, 150, 0, 45)
 SetPosButton.BackgroundColor3 = colors.button
 SetPosButton.TextColor3 = colors.text
 SetPosButton.Text = "SET BY CLICK"
 SetPosButton.Font = Enum.Font.GothamBold
 SetPosButton.Parent = PositionSection
+
+local SetPosCorner = Instance.new("UICorner")
+SetPosCorner.CornerRadius = UDim.new(0, 8)
+SetPosCorner.Parent = SetPosButton
 
 -- Секция настроек
 local SettingsSection = Instance.new("Frame")
@@ -223,6 +199,9 @@ IntervalBox.Text = "0.1"
 IntervalBox.Font = Enum.Font.Gotham
 IntervalBox.Parent = SettingsSection
 
+local IntervalCorner = Instance.new("UICorner")
+IntervalCorner.CornerRadius = UDim.new(0, 8)
+IntervalCorner.Parent = IntervalBox
 -- Главная кнопка
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(1, -20, 0, 50)
@@ -237,6 +216,7 @@ ToggleButton.Parent = ContentFrame
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 8)
 ToggleCorner.Parent = ToggleButton
+
 -- Быстрая кнопка
 local QuickToggle = Instance.new("TextButton")
 QuickToggle.Size = UDim2.new(0, 55, 0, 55)
@@ -258,7 +238,7 @@ QuickCorner.Parent = QuickToggle
 local ClickMarker = Instance.new("Frame")
 ClickMarker.Size = UDim2.new(0, 12, 0, 12)
 ClickMarker.AnchorPoint = Vector2.new(0.5, 0.5)
-ClickMarker.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+ClickMarker.BackgroundColor3 = colors.toggleOff
 ClickMarker.BorderSizePixel = 0
 ClickMarker.Visible = false
 ClickMarker.ZIndex = 2
@@ -271,18 +251,11 @@ MarkerCorner.Parent = ClickMarker
 -- Переменные состояния
 local clickPosition = Vector2.new(0, 0)
 local isRunning = false
-local isMinimized = false
-local isEditing = false
 local connection
-local lastClickTime = 0
 
 -- Функция клика
 local function doClick()
     if not isRunning then return end
-    
-    local currentTime = tick()
-    if currentTime - lastClickTime < 0.02 then return end
-    lastClickTime = currentTime
     
     local vim = game:GetService("VirtualInputManager")
     vim:SendMouseButtonEvent(clickPosition.X, clickPosition.Y, 0, true, game, 1)
@@ -366,43 +339,22 @@ CloseButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Сворачивание
-MinimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    
-    if isMinimized then
-        MainFrame.Size = UDim2.new(0, 350, 0, 50)
-        QuickToggle.Visible = true
-    else
-        MainFrame.Size = UDim2.new(0, 350, 0, 400)
-        QuickToggle.Visible = false
-    end
-end)
-
--- Режим редактирования
-EditButton.MouseButton1Click:Connect(function()
-    isEditing = not isEditing
-    
-    if isEditing then
-        EditButton.BackgroundColor3 = colors.accent
-        QuickToggle.Text = "✎"
-        
-        local inputConnection
-        inputConnection = UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local mousePos = UserInputService:GetMouseLocation()
-                QuickToggle.Position = UDim2.new(0, mousePos.X - 28, 0, mousePos.Y - 28)
-                isEditing = false
-                EditButton.BackgroundColor3 = colors.button
-                QuickToggle.Text = isRunning and "⏸️" or "⚡"
-                inputConnection:Disconnect()
-            end
-        end)
-    else
-        EditButton.BackgroundColor3 = colors.button
-        QuickToggle.Text = isRunning and "⏸️" or "⚡"
-    end
-end)
-
 -- Инициализация
 updateMarker()
+
+-- Анимация при наведении на кнопки
+local function setupButtonHover(button)
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = colors.buttonHover
+    end)
+    button.MouseLeave:Connect(function()
+        if button ~= ToggleButton and button ~= QuickToggle then
+            button.BackgroundColor3 = colors.button
+        end
+    end)
+end
+
+setupButtonHover(SetPosButton)
+setupButtonHover(ToggleButton)
+setupButtonHover(QuickToggle)
+setupButtonHover(CloseButton)
