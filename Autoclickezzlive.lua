@@ -1,27 +1,28 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
--- Стиль Nur-Sultan
+-- Стильные настройки
 local colors = {
     background = Color3.fromRGB(30, 35, 45),
     header = Color3.fromRGB(20, 25, 35),
     button = Color3.fromRGB(50, 55, 70),
     buttonHover = Color3.fromRGB(70, 75, 90),
-    toggleOn = Color3.fromRGB(0, 180, 120),  -- Бирюзовый
-    toggleOff = Color3.fromRGB(180, 50, 50), -- Красный
+    toggleOn = Color3.fromRGB(0, 180, 120),
+    toggleOff = Color3.fromRGB(180, 50, 50),
     text = Color3.fromRGB(240, 240, 240),
-    accent = Color3.fromRGB(0, 150, 200)     -- Голубой акцент
+    accent = Color3.fromRGB(0, 150, 200)
 }
 
 -- Создание GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NurAutoClicker"
+ScreenGui.Name = "PremiumAutoClicker"
 ScreenGui.Parent = game.CoreGui
 
--- Главный контейнер с возможностью перемещения
+-- Главный фрейм с возможностью перемещения
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 340, 0, 380)
 MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
@@ -45,12 +46,12 @@ UIStroke.Thickness = 2
 UIStroke.Transparency = 0.7
 UIStroke.Parent = MainFrame
 
--- Заголовок в стиле Nur-Sultan
+-- Заголовок с эффектом
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.BackgroundColor3 = colors.header
-Title.Text = "NUR AUTO CLICKER"
+Title.Text = "PREMIUM CLICKER"
 Title.TextColor3 = colors.text
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -75,6 +76,21 @@ CloseButton.Parent = Title
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 20)
 CloseCorner.Parent = CloseButton
+
+-- Кнопка сворачивания
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0, 40, 0, 40)
+MinimizeButton.Position = UDim2.new(1, -90, 0, 5)
+MinimizeButton.BackgroundColor3 = colors.button
+MinimizeButton.Text = "_"
+MinimizeButton.TextColor3 = colors.text
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 24
+MinimizeButton.Parent = Title
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 20)
+MinimizeCorner.Parent = MinimizeButton
 
 -- Контейнер содержимого
 local ContentFrame = Instance.new("Frame")
@@ -202,6 +218,7 @@ IntervalBox.Parent = SettingsSection
 local IntervalCorner = Instance.new("UICorner")
 IntervalCorner.CornerRadius = UDim.new(0, 8)
 IntervalCorner.Parent = IntervalBox
+
 -- Главная кнопка
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(1, -20, 0, 50)
@@ -216,7 +233,6 @@ ToggleButton.Parent = ContentFrame
 local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(0, 8)
 ToggleCorner.Parent = ToggleButton
-
 -- Быстрая кнопка
 local QuickToggle = Instance.new("TextButton")
 QuickToggle.Size = UDim2.new(0, 55, 0, 55)
@@ -251,6 +267,7 @@ MarkerCorner.Parent = ClickMarker
 -- Переменные состояния
 local clickPosition = Vector2.new(0, 0)
 local isRunning = false
+local isMinimized = false
 local connection
 
 -- Функция клика
@@ -339,10 +356,20 @@ CloseButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Инициализация
-updateMarker()
+-- Сворачивание/разворачивание
+MinimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    
+    if isMinimized then
+        MainFrame.Size = UDim2.new(0, 340, 0, 50)
+        QuickToggle.Visible = true
+    else
+        MainFrame.Size = UDim2.new(0, 340, 0, 380)
+        QuickToggle.Visible = false
+    end
+end)
 
--- Анимация при наведении на кнопки
+-- Анимация при наведении
 local function setupButtonHover(button)
     button.MouseEnter:Connect(function()
         button.BackgroundColor3 = colors.buttonHover
@@ -358,3 +385,7 @@ setupButtonHover(SetPosButton)
 setupButtonHover(ToggleButton)
 setupButtonHover(QuickToggle)
 setupButtonHover(CloseButton)
+setupButtonHover(MinimizeButton)
+
+-- Инициализация
+updateMarker()
