@@ -12,10 +12,10 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AimBotMenu"
 screenGui.ResetOnSpawn = false
 
--- Основное меню (дерзкий дизайн)
+-- Основное меню
 local mainMenu = Instance.new("Frame")
-mainMenu.Size = UDim2.new(0, 320, 0, 420)
-mainMenu.Position = UDim2.new(0.5, -160, 0.5, -210)
+mainMenu.Size = UDim2.new(0, 320, 0, 400)
+mainMenu.Position = UDim2.new(0.5, -160, 0.5, -200)
 mainMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 mainMenu.BackgroundTransparency = 0.1
 mainMenu.BorderSizePixel = 3
@@ -28,7 +28,7 @@ local menuCorner = Instance.new("UICorner")
 menuCorner.CornerRadius = UDim.new(0.03, 0)
 menuCorner.Parent = mainMenu
 
--- Градиентный заголовок
+-- Заголовок
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 35)
 titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -46,7 +46,6 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0.03, 0)
 titleCorner.Parent = titleBar
 
--- Текст заголовка с тенью
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.6, 0, 1, 0)
 title.Position = UDim2.new(0.2, 0, 0, 0)
@@ -58,7 +57,7 @@ title.Font = Enum.Font.GothamBlack
 title.TextStrokeTransparency = 0.8
 title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 
--- Кнопки управления (стильные)
+-- Кнопки управления
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 25, 0, 25)
 closeButton.Position = UDim2.new(1, -30, 0, 5)
@@ -85,23 +84,23 @@ local minimizeCorner = Instance.new("UICorner")
 minimizeCorner.CornerRadius = UDim.new(0.5, 0)
 minimizeCorner.Parent = minimizeButton
 
--- Главная кнопка Aim Bot (меньше и выше)
-local aimButton = Instance.new("TextButton")
-aimButton.Size = UDim2.new(0, 60, 0, 60)
-aimButton.Position = UDim2.new(1, -70, 0, 80)  -- Выше
-aimButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-aimButton.BackgroundTransparency = 0.2
-aimButton.Text = "🎯\nOFF"
-aimButton.TextSize = 11
-aimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-aimButton.TextWrapped = true
-aimButton.Visible = false
+-- Кнопка Rage/Legit (главная кнопка)
+local modeButton = Instance.new("TextButton")
+modeButton.Size = UDim2.new(0, 70, 0, 70)
+modeButton.Position = UDim2.new(1, -80, 0, 100)
+modeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+modeButton.BackgroundTransparency = 0.3
+modeButton.Text = "🔥\nRAGE"
+modeButton.TextSize = 12
+modeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+modeButton.TextWrapped = true
+modeButton.Visible = false
 
-local aimButtonCorner = Instance.new("UICorner")
-aimButtonCorner.CornerRadius = UDim.new(0.2, 0)
-aimButtonCorner.Parent = aimButton
+local modeButtonCorner = Instance.new("UICorner")
+modeButtonCorner.CornerRadius = UDim.new(0.2, 0)
+modeButtonCorner.Parent = modeButton
 
--- Кольцо для Legit режима (видимое)
+-- Кольцо для Legit режима (делаем видимым)
 local legitCircle = Instance.new("Frame")
 legitCircle.Size = UDim2.new(0, 50, 0, 50)
 legitCircle.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -135,7 +134,9 @@ toggleCorner.Parent = toggleMenuButton
 -- Настройки
 local SETTINGS = {
     AimBotEnabled = false,
-    Mode = "Legit", -- "Legit" или "Rage"
+    Mode = "Rage", -- "Legit" или "Rage"
+    RageEnabled = false,
+    LegitEnabled = false,
     ThroughWalls = false,
     ESPEnabled = true,
     MaxDistance = 500,
@@ -150,29 +151,8 @@ local espFolders = {}
 local currentTarget = nil
 local isAiming = false
 
--- Стилизованные элементы меню
-local function createSection(titleText, yPos)
-    local section = Instance.new("Frame")
-    section.Size = UDim2.new(1, -20, 0, 25)
-    section.Position = UDim2.new(0, 10, 0, yPos)
-    section.BackgroundTransparency = 1
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Text = "┣ " .. titleText
-    label.TextColor3 = Color3.fromRGB(255, 100, 100)
-    label.TextSize = 12
-    label.Font = Enum.Font.GothamBold
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.BackgroundTransparency = 1
-    
-    label.Parent = section
-    section.Parent = mainMenu
-    
-    return section
-end
-
-local function createToggle(settingName, displayName, currentVal, yPos, modeFilter)
+-- Создаем элементы меню
+local function createToggle(settingName, displayName, currentVal, yPos)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, -20, 0, 25)
     container.Position = UDim2.new(0, 10, 0, yPos)
@@ -180,37 +160,36 @@ local function createToggle(settingName, displayName, currentVal, yPos, modeFilt
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.Text = "  ↳ " .. displayName
+    label.Text = displayName
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 11
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.BackgroundTransparency = 1
     
     local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 45, 0, 20)
+    toggle.Size = UDim2.new(0, 40, 0, 20)
     toggle.Position = UDim2.new(0.8, 0, 0, 0)
-    toggle.BackgroundColor3 = currentVal and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(80, 80, 80)
+    toggle.BackgroundColor3 = currentVal and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
     toggle.Text = currentVal and "ON" or "OFF"
     toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggle.TextSize = 9
-    toggle.Font = Enum.Font.GothamBold
     
     local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0.3, 0)
+    toggleCorner.CornerRadius = UDim.new(0.2, 0)
     toggleCorner.Parent = toggle
-    
-    -- Фильтр по режиму
-    if modeFilter then
-        toggle.Visible = SETTINGS.Mode == modeFilter
-    end
     
     toggle.MouseButton1Click:Connect(function()
         SETTINGS[settingName] = not SETTINGS[settingName]
-        toggle.BackgroundColor3 = SETTINGS[settingName] and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(80, 80, 80)
+        toggle.BackgroundColor3 = SETTINGS[settingName] and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
         toggle.Text = SETTINGS[settingName] and "ON" or "OFF"
         
         if settingName == "AimBotEnabled" then
-            updateModeVisuals()
+            modeButton.Visible = SETTINGS[settingName]
+            if not SETTINGS[settingName] then
+                SETTINGS.RageEnabled = false
+                SETTINGS.LegitEnabled = false
+                updateModeButton()
+            end
         end
         
         if settingName == "ESPEnabled" and not SETTINGS[settingName] then
@@ -222,10 +201,10 @@ local function createToggle(settingName, displayName, currentVal, yPos, modeFilt
     label.Parent = container
     toggle.Parent = container
     
-    return container, toggle
+    return container
 end
 
-local function createSlider(settingName, displayName, minVal, maxVal, currentVal, yPos, modeFilter)
+local function createSlider(settingName, displayName, minVal, maxVal, currentVal, yPos)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, -20, 0, 45)
     container.Position = UDim2.new(0, 10, 0, yPos)
@@ -233,7 +212,7 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.6, 0, 0, 20)
-    label.Text = "  ↳ " .. displayName
+    label.Text = displayName
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 11
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -243,7 +222,7 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     valueLabel.Size = UDim2.new(0.3, 0, 0, 20)
     valueLabel.Position = UDim2.new(0.65, 0, 0, 0)
     valueLabel.Text = tostring(currentVal)
-    valueLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     valueLabel.TextSize = 11
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
     valueLabel.BackgroundTransparency = 1
@@ -252,21 +231,15 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     valueBox.Size = UDim2.new(1, 0, 0, 20)
     valueBox.Position = UDim2.new(0, 0, 0, 25)
     valueBox.Text = tostring(currentVal)
-    valueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    valueBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     valueBox.BackgroundTransparency = 0.5
     valueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     valueBox.TextSize = 11
     valueBox.PlaceholderText = tostring(currentVal)
-    valueBox.ClearTextOnFocus = false
     
     local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0.1, 0)
+    boxCorner.CornerRadius = UDim.new(0.05, 0)
     boxCorner.Parent = valueBox
-    
-    -- Фильтр по режиму
-    if modeFilter then
-        container.Visible = SETTINGS.Mode == modeFilter
-    end
     
     valueBox.FocusLost:Connect(function()
         local num = tonumber(valueBox.Text)
@@ -294,32 +267,57 @@ end
 -- Переключатель режимов
 local function createModeSwitch(yPos)
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -20, 0, 35)
+    container.Size = UDim2.new(1, -20, 0, 30)
     container.Position = UDim2.new(0, 10, 0, yPos)
     container.BackgroundTransparency = 1
     
-    local switch = Instance.new("TextButton")
-    switch.Size = UDim2.new(1, 0, 0, 30)
-    switch.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(255, 50, 50)
-    switch.Text = SETTINGS.Mode == "Legit" and "🎯 LEGIT MODE" or "🔥 RAGE MODE"
-    switch.TextColor3 = Color3.fromRGB(255, 255, 255)
-    switch.TextSize = 12
-    switch.Font = Enum.Font.GothamBold
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.Text = "Режим:"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
     
-    local switchCorner = Instance.new("UICorner")
-    switchCorner.CornerRadius = UDim.new(0.1, 0)
-    switchCorner.Parent = switch
+    local legitButton = Instance.new("TextButton")
+    legitButton.Size = UDim2.new(0, 60, 0, 25)
+    legitButton.Position = UDim2.new(0.4, 0, 0, 0)
+    legitButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(100, 100, 100)
+    legitButton.Text = "LEGIT"
+    legitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    legitButton.TextSize = 9
     
-    switch.MouseButton1Click:Connect(function()
-        SETTINGS.Mode = SETTINGS.Mode == "Legit" and "Rage" or "Legit"
-        switch.Text = SETTINGS.Mode == "Legit" and "🎯 LEGIT MODE" and "🔥 RAGE MODE"
-        switch.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(255, 50, 50)
-        updateModeVisuals()
-        updateMenuVisibility()
+    local rageButton = Instance.new("TextButton")
+    rageButton.Size = UDim2.new(0, 60, 0, 25)
+    rageButton.Position = UDim2.new(0.7, 0, 0, 0)
+    rageButton.BackgroundColor3 = SETTINGS.Mode == "Rage" and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 100, 100)
+    rageButton.Text = "RAGE"
+    rageButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    rageButton.TextSize = 9
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0.2, 0)
+    buttonCorner.Parent = legitButton
+    buttonCorner:Clone().Parent = rageButton
+    
+    legitButton.MouseButton1Click:Connect(function()
+        SETTINGS.Mode = "Legit"
+        legitButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+        rageButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        updateModeButton()
+    end)
+    
+    rageButton.MouseButton1Click:Connect(function()
+        SETTINGS.Mode = "Rage"
+        rageButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        legitButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        updateModeButton()
     end)
     
     container.Parent = mainMenu
-    switch.Parent = container
+    label.Parent = container
+    legitButton.Parent = container
+    rageButton.Parent = container
     
     return container
 end
@@ -327,48 +325,36 @@ end
 -- Создаем элементы меню
 local yPos = 45
 
--- Основные настройки
-createSection("ОСНОВНЫЕ НАСТРОЙКИ", yPos)
-yPos = yPos + 30
-
 -- Включить Aim Bot
 createToggle("AimBotEnabled", "Включить Aim Bot", SETTINGS.AimBotEnabled, yPos)
 yPos = yPos + 30
 
 -- Переключатель режимов
 createModeSwitch(yPos)
-yPos = yPos + 40
-
--- Общие настройки
-createSection("ОБЩИЕ НАСТРОЙКИ", yPos)
-yPos = yPos + 30
+yPos = yPos + 35
 
 -- Наводка сквозь стены
 createToggle("ThroughWalls", "Наводка сквозь стены", SETTINGS.ThroughWalls, yPos)
-yPos = yPos + 25
+yPos = yPos + 30
 
 -- ESP
 createToggle("ESPEnabled", "ESP", SETTINGS.ESPEnabled, yPos)
-yPos = yPos + 25
+yPos = yPos + 30
+
+-- Срыв аим бота
+createToggle("CanBreakAim", "Срыв аим бота", SETTINGS.CanBreakAim, yPos)
+yPos = yPos + 30
 
 -- Дистанция
-createSlider("MaxDistance", "Дистанция", 1, 1000, SETTINGS.MaxDistance, yPos)
+local distanceSlider, distanceLabel = createSlider("MaxDistance", "Дистанция", 1, 1000, SETTINGS.MaxDistance, yPos)
 yPos = yPos + 50
 
 -- Скорость наводки
-createSlider("AimSpeed", "Скорость наводки", 0.1, 1, SETTINGS.AimSpeed, yPos)
+local speedSlider, speedLabel = createSlider("AimSpeed", "Скорость наводки", 0.1, 1, SETTINGS.AimSpeed, yPos)
 yPos = yPos + 50
 
--- Настройки Legit
-local legitSection = createSection("LEGIT НАСТРОЙКИ", yPos)
-yPos = yPos + 30
-
--- Ширина кольца (только для Legit)
-local circleSlider, circleLabel = createSlider("CircleRadius", "Ширина кольца", 10, 200, SETTINGS.CircleRadius, yPos, "Legit")
-yPos = yPos + 50
-
--- Срыв аим бота (только для Legit)
-local breakToggle, breakButton = createToggle("CanBreakAim", "Срыв аим бота", SETTINGS.CanBreakAim, yPos, "Legit")
+-- Ширина кольца
+local circleSlider, circleLabel = createSlider("CircleRadius", "Ширина кольца", 10, 200, SETTINGS.CircleRadius, yPos)
 
 -- Добавляем все в GUI
 titleBar.Parent = mainMenu
@@ -376,46 +362,30 @@ title.Parent = titleBar
 closeButton.Parent = titleBar
 minimizeButton.Parent = titleBar
 mainMenu.Parent = screenGui
-aimButton.Parent = screenGui
+modeButton.Parent = screenGui
 legitCircle.Parent = screenGui
 toggleMenuButton.Parent = screenGui
 screenGui.Parent = playerGui
 
--- Функция обновления видимости меню по режиму
-function updateMenuVisibility()
-    for _, child in pairs(mainMenu:GetChildren()) do
-        if child:IsA("Frame") and child ~= titleBar then
-            local slider = child:FindFirstChildWhichIsA("TextBox")
-            local toggle = child:FindFirstChildWhichIsA("TextButton")
-            
-            if slider then
-                child.Visible = true
-            elseif toggle and toggle.Text == "ON" or toggle.Text == "OFF" then
-                child.Visible = true
-            end
-        end
-    end
-end
-
--- Функция обновления визуалов режимов
-function updateModeVisuals()
-    if SETTINGS.AimBotEnabled then
-        aimButton.Visible = true
-        aimButton.Text = SETTINGS.Mode == "Legit" and "🎯\nON" or "🔥\nON"
-        aimButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(255, 50, 50)
-        
-        if SETTINGS.Mode == "Legit" then
-            legitCircle.Visible = true
-            legitCircle.BorderColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            legitCircle.Visible = false
-        end
+-- Функция обновления кнопки режима
+function updateModeButton()
+    if SETTINGS.Mode == "Legit" then
+        modeButton.Text = "🎯\nLEGIT"
+        modeButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+        legitCircle.Visible = SETTINGS.LegitEnabled
     else
-        aimButton.Visible = false
+        modeButton.Text = "🔥\nRAGE"
+        modeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
         legitCircle.Visible = false
     end
     
-    updateMenuVisibility()
+    if SETTINGS.RageEnabled or SETTINGS.LegitEnabled then
+        modeButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 255, 0)
+        modeButton.Text = SETTINGS.Mode == "Legit" and "🎯\nON" or "🔥\nON"
+    else
+        modeButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(255, 50, 50)
+        modeButton.Text = SETTINGS.Mode == "Legit" and "🎯\nLEGIT" or "🔥\nRAGE"
+    end
 end
 
 -- Обработка кнопок управления
@@ -436,13 +406,24 @@ toggleMenuButton.MouseButton1Click:Connect(function()
     toggleMenuButton.Visible = false
 end)
 
--- Обработка главной кнопки Aim Bot
-aimButton.MouseButton1Click:Connect(function()
-    SETTINGS.AimBotEnabled = not SETTINGS.AimBotEnabled
-    updateModeVisuals()
+-- Обработка главной кнопки режима
+modeButton.MouseButton1Click:Connect(function()
+    if not SETTINGS.AimBotEnabled then return end
+    
+    if SETTINGS.Mode == "Legit" then
+        SETTINGS.LegitEnabled = not SETTINGS.LegitEnabled
+        SETTINGS.RageEnabled = false
+        legitCircle.Visible = SETTINGS.LegitEnabled
+    else
+        SETTINGS.RageEnabled = not SETTINGS.RageEnabled
+        SETTINGS.LegitEnabled = false
+        legitCircle.Visible = false
+    end
+    
+    updateModeButton()
 end)
 
--- Функции Aim Bot (остаются без изменений)
+-- Функции Aim Bot (остаются как были)
 function checkVisibility(targetPart)
     if SETTINGS.ThroughWalls then return true end
     
@@ -551,7 +532,7 @@ function aimAtTarget(targetPart)
     camera.CFrame = currentCFrame:Lerp(targetCFrame, SETTINGS.AimSpeed)
 end
 
--- Исправленный ESP (убирает мертвых игроков)
+-- ESP функции
 function createESP(targetPlayer)
     if espFolders[targetPlayer] then return espFolders[targetPlayer] end
     
@@ -588,7 +569,6 @@ function updateESP()
     local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     
-    -- Убираем ESP для мертвых/неактивных игроков
     for targetPlayer, folder in pairs(espFolders) do
         if not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("Humanoid") or targetPlayer.Character.Humanoid.Health <= 0 then
             folder:Destroy()
@@ -646,9 +626,9 @@ RunService.RenderStepped:Connect(function()
     if SETTINGS.AimBotEnabled then
         local target = nil
         
-        if SETTINGS.Mode == "Legit" then
+        if SETTINGS.Mode == "Legit" and SETTINGS.LegitEnabled then
             target = findTargetLegit()
-        else
+        elseif SETTINGS.Mode == "Rage" and SETTINGS.RageEnabled then
             target = findTargetRage()
         end
         
@@ -683,7 +663,7 @@ RunService.RenderStepped:Connect(function()
     updateESP()
 end)
 
--- Очистка при выходе игрока
+-- Очистка
 Players.PlayerRemoving:Connect(function(leftPlayer)
     if espFolders[leftPlayer] then
         espFolders[leftPlayer]:Destroy()
@@ -691,17 +671,14 @@ Players.PlayerRemoving:Connect(function(leftPlayer)
     end
 end)
 
--- Очистка при смерти
-local function onCharacterAdded(character)
+player.CharacterAdded:Connect(function()
     clearESP()
-end
-
-player.CharacterAdded:Connect(onCharacterAdded)
+end)
 
 -- Инициализация
 legitCircle.Size = UDim2.new(0, SETTINGS.CircleRadius, 0, SETTINGS.CircleRadius)
-updateModeVisuals()
-updateMenuVisibility()
+updateModeButton()
 
 print("🎯 AIM BOT PRO ЗАГРУЖЕНО!")
-print("Дерзкий дизайн + исправленные баги")
+print("Старая система кнопок возвращена!")
+print("Кольцо теперь видно!")
