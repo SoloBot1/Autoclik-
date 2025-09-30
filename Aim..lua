@@ -14,15 +14,15 @@ screenGui.ResetOnSpawn = false
 
 -- Основное меню (прозрачное с бортами)
 local mainMenu = Instance.new("Frame")
-mainMenu.Size = UDim2.new(0, 320, 0, 420)
-mainMenu.Position = UDim2.new(0.5, -160, 0.5, -210)
+mainMenu.Size = UDim2.new(0, 300, 0, 350)
+mainMenu.Position = UDim2.new(0.5, -150, 0.5, -175)
 mainMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-mainMenu.BackgroundTransparency = 0.8  -- Прозрачный
+mainMenu.BackgroundTransparency = 0.8
 mainMenu.BorderSizePixel = 2
 mainMenu.BorderColor3 = Color3.fromRGB(255, 50, 50)
 mainMenu.Visible = true
 mainMenu.Active = true
-mainMenu.Draggable = true  -- Можно перемещать
+mainMenu.Draggable = true
 
 local menuCorner = Instance.new("UICorner")
 menuCorner.CornerRadius = UDim.new(0.02, 0)
@@ -76,7 +76,7 @@ local minimizeCorner = Instance.new("UICorner")
 minimizeCorner.CornerRadius = UDim.new(0.5, 0)
 minimizeCorner.Parent = minimizeButton
 
--- Кнопка Rage (появляется когда включен aim bot)
+-- Кнопка Rage
 local rageButton = Instance.new("TextButton")
 rageButton.Size = UDim2.new(0, 70, 0, 70)
 rageButton.Position = UDim2.new(1, -80, 0, 100)
@@ -92,7 +92,7 @@ local rageCorner = Instance.new("UICorner")
 rageCorner.CornerRadius = UDim.new(0.2, 0)
 rageCorner.Parent = rageButton
 
--- Кнопка свернуть/развернуть меню (маленькая подвижная)
+-- Кнопка свернуть/развернуть меню
 local toggleMenuButton = Instance.new("TextButton")
 toggleMenuButton.Size = UDim2.new(0, 40, 0, 40)
 toggleMenuButton.Position = UDim2.new(0, 10, 0, 10)
@@ -103,7 +103,7 @@ toggleMenuButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleMenuButton.TextSize = 16
 toggleMenuButton.Visible = false
 toggleMenuButton.Active = true
-toggleMenuButton.Draggable = true  -- Подвижная кнопка
+toggleMenuButton.Draggable = true
 
 local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0.2, 0)
@@ -113,35 +113,60 @@ toggleCorner.Parent = toggleMenuButton
 local SETTINGS = {
     AimBotEnabled = false,
     RageEnabled = false,
-    ThroughWalls = true,  -- Всегда работает
+    ThroughWalls = false,  -- Можно вкл/выкл
     ESPEnabled = true,
     MaxDistance = 500,
-    AimSpeed = 0.3,  -- Скорость наводки
-    CanBreakAim = true,
+    AimSpeed = 0.3,
     MenuVisible = true
 }
 
 -- Создаем элементы меню
-local function createButton(text, yPos, callback)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -20, 0, 35)
-    button.Position = UDim2.new(0, 10, 0, yPos)
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    button.BackgroundTransparency = 0.5
-    button.BorderSizePixel = 1
-    button.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 12
+local function createToggle(settingName, displayName, currentVal, yPos)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, -20, 0, 25)
+    container.Position = UDim2.new(0, 10, 0, yPos)
+    container.BackgroundTransparency = 1
     
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0.05, 0)
-    buttonCorner.Parent = button
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Text = displayName
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
     
-    button.MouseButton1Click:Connect(callback)
-    button.Parent = mainMenu
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0, 40, 0, 20)
+    toggle.Position = UDim2.new(0.8, 0, 0, 0)
+    toggle.BackgroundColor3 = currentVal and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
+    toggle.Text = currentVal and "ON" or "OFF"
+    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggle.TextSize = 9
     
-    return button
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0.2, 0)
+    toggleCorner.Parent = toggle
+    
+    toggle.MouseButton1Click:Connect(function()
+        SETTINGS[settingName] = not SETTINGS[settingName]
+        toggle.BackgroundColor3 = SETTINGS[settingName] and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
+        toggle.Text = SETTINGS[settingName] and "ON" or "OFF"
+        
+        if settingName == "AimBotEnabled" then
+            rageButton.Visible = SETTINGS[settingName]
+            if not SETTINGS[settingName] then
+                SETTINGS.RageEnabled = false
+                rageButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                rageButton.Text = "🔥\nRAGE"
+            end
+        end
+    end)
+    
+    container.Parent = mainMenu
+    label.Parent = container
+    toggle.Parent = container
+    
+    return container
 end
 
 local function createSlider(settingName, displayName, minVal, maxVal, currentVal, yPos)
@@ -200,54 +225,6 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     return container, valueLabel
 end
 
-local function createToggle(settingName, displayName, currentVal, yPos)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -20, 0, 25)
-    container.Position = UDim2.new(0, 10, 0, yPos)
-    container.BackgroundTransparency = 1
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.Text = displayName
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 11
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.BackgroundTransparency = 1
-    
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 40, 0, 20)
-    toggle.Position = UDim2.new(0.8, 0, 0, 0)
-    toggle.BackgroundColor3 = currentVal and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
-    toggle.Text = currentVal and "ON" or "OFF"
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.TextSize = 9
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0.2, 0)
-    toggleCorner.Parent = toggle
-    
-    toggle.MouseButton1Click:Connect(function()
-        SETTINGS[settingName] = not SETTINGS[settingName]
-        toggle.BackgroundColor3 = SETTINGS[settingName] and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
-        toggle.Text = SETTINGS[settingName] and "ON" or "OFF"
-        
-        if settingName == "AimBotEnabled" then
-            rageButton.Visible = SETTINGS[settingName]
-            if not SETTINGS[settingName] then
-                SETTINGS.RageEnabled = false
-                rageButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                rageButton.Text = "🔥\nRAGE"
-            end
-        end
-    end)
-    
-    container.Parent = mainMenu
-    label.Parent = container
-    toggle.Parent = container
-    
-    return container
-end
-
 -- Создаем элементы меню
 local yPos = 40
 
@@ -255,12 +232,12 @@ local yPos = 40
 createToggle("AimBotEnabled", "Включить Aim Bot", SETTINGS.AimBotEnabled, yPos)
 yPos = yPos + 30
 
--- ESP
-createToggle("ESPEnabled", "ESP", SETTINGS.ESPEnabled, yPos)
+-- Наводка сквозь стены
+createToggle("ThroughWalls", "Наводка сквозь стены", SETTINGS.ThroughWalls, yPos)
 yPos = yPos + 30
 
--- Срыв Aim Bot
-createToggle("CanBreakAim", "Срыв Aim Bot", SETTINGS.CanBreakAim, yPos)
+-- ESP
+createToggle("ESPEnabled", "ESP", SETTINGS.ESPEnabled, yPos)
 yPos = yPos + 30
 
 -- Дистанция
@@ -270,18 +247,6 @@ yPos = yPos + 50
 -- Скорость наводки
 local speedSlider, speedLabel = createSlider("AimSpeed", "Скорость наводки", 0.1, 1, SETTINGS.AimSpeed, yPos)
 yPos = yPos + 50
-
--- Информация
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, -20, 0, 40)
-infoLabel.Position = UDim2.new(0, 10, 0, yPos)
-infoLabel.BackgroundTransparency = 1
-infoLabel.Text = "Наводка сквозь стены: ВКЛ"
-infoLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-infoLabel.TextSize = 11
-infoLabel.TextXAlignment = Enum.TextXAlignment.Center
-infoLabel.Parent = mainMenu
-yPos = yPos + 45
 
 -- Добавляем все в GUI
 titleBar.Parent = mainMenu
@@ -328,12 +293,12 @@ end)
 
 -- Переменные для Aim Bot
 local currentTarget = nil
-local isAiming = false
-local espFolders = {}
 
 -- Функции Aim Bot
 function checkVisibility(targetPart)
-    if SETTINGS.ThroughWalls then return true end  -- Всегда true
+    if SETTINGS.ThroughWalls then 
+        return true  -- Сквозь стены включено
+    end
     
     local character = player.Character
     if not character or not targetPart then return false end
@@ -401,42 +366,139 @@ function aimAtTarget(targetPart)
     camera.CFrame = currentCFrame:Lerp(targetCFrame, SETTINGS.AimSpeed)
 end
 
+-- ESP функции
+local espFolders = {}
+
+function updateESP()
+    if not SETTINGS.ESPEnabled then
+        clearESP()
+        return
+    end
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            createESP(otherPlayer)
+        end
+    end
+end
+
+function createESP(targetPlayer)
+    if espFolders[targetPlayer] then return end
+    
+    local folder = Instance.new("Folder")
+    folder.Name = targetPlayer.Name .. "_ESP"
+    espFolders[targetPlayer] = folder
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 10
+    nameLabel.Font = Enum.Font.Gotham
+    nameLabel.TextStrokeTransparency = 0.8
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.Size = UDim2.new(0, 80, 0, 15)
+    nameLabel.Visible = false
+    
+    nameLabel.Parent = folder
+    folder.Parent = screenGui
+    
+    return folder
+end
+
+function updateESPVisual(targetPlayer, distance, isVisible)
+    local folder = espFolders[targetPlayer]
+    if not folder then return end
+    
+    local character = targetPlayer.Character
+    if not character then return end
+    
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+    
+    local camera = workspace.CurrentCamera
+    local headScreenPos, headVisible = camera:WorldToViewportPoint(head.Position)
+    
+    local nameLabel = folder:FindFirstChild("NameLabel")
+    
+    if headVisible then
+        local color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        
+        if nameLabel then
+            nameLabel.Visible = true
+            nameLabel.TextColor3 = color
+            
+            local shortName = targetPlayer.Name
+            if #shortName > 8 then
+                shortName = string.sub(shortName, 1, 6) .. ".."
+            end
+            
+            nameLabel.Text = string.format("%s [%.0f]", shortName, distance)
+            nameLabel.Position = UDim2.new(0, headScreenPos.X - 40, 0, headScreenPos.Y - 30)
+        end
+    else
+        if nameLabel then
+            nameLabel.Visible = false
+        end
+    end
+end
+
+function clearESP()
+    for player, folder in pairs(espFolders) do
+        folder:Destroy()
+    end
+    espFolders = {}
+end
+
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
     if SETTINGS.AimBotEnabled and SETTINGS.RageEnabled then
         local target, distance = findTarget()
         
         if target then
-            -- Проверка срыва прицела
-            if SETTINGS.CanBreakAim and isAiming then
-                local camera = workspace.CurrentCamera
-                local screenPoint = camera:WorldToViewportPoint(target.Position)
-                local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-                local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
-                
-                if (targetPos - center).Magnitude > 50 then
-                    isAiming = false
-                    currentTarget = nil
-                    return
-                end
-            end
-            
             currentTarget = target
-            isAiming = true
             aimAtTarget(target)
         else
             currentTarget = nil
-            isAiming = false
         end
     else
-        isAiming = false
         currentTarget = nil
+    end
+    
+    -- Обновляем ESP для всех игроков
+    if SETTINGS.ESPEnabled then
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local targetChar = otherPlayer.Character
+                local humanoid = targetChar:FindFirstChild("Humanoid")
+                local head = targetChar:FindFirstChild("Head")
+                
+                if head and humanoid and humanoid.Health > 0 then
+                    local distance = 0
+                    local playerRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if playerRoot then
+                        distance = (playerRoot.Position - head.Position).Magnitude
+                    end
+                    
+                    local isVisible = checkVisibility(head)
+                    updateESPVisual(otherPlayer, distance, isVisible)
+                end
+            end
+        end
+    else
+        clearESP()
+    end
+end)
+
+-- Очистка при выходе игрока
+Players.PlayerRemoving:Connect(function(leftPlayer)
+    if espFolders[leftPlayer] then
+        espFolders[leftPlayer]:Destroy()
+        espFolders[leftPlayer] = nil
     end
 end)
 
 print("🎯 AIM BOT MENU ЗАГРУЖЕНО!")
-print("Дизайн: прозрачный с бортами")
-print("Настройки:")
-print("- Наводка сквозь стены: ВСЕГДА ВКЛ")
-print("- Скорость наводки: 0.1-1")
-print("- Подвижная кнопка меню")
+print("Механика стен: ВКЛ/ВЫКЛ")
+print("ESP: ВКЛ/ВЫКЛ")
+print("Срыв aim bot: УБРАН")
