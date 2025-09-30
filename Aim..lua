@@ -12,10 +12,10 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AimBotMenu"
 screenGui.ResetOnSpawn = false
 
--- Основное меню (прозрачное с бортами)
+-- Основное меню
 local mainMenu = Instance.new("Frame")
-mainMenu.Size = UDim2.new(0, 300, 0, 350)
-mainMenu.Position = UDim2.new(0.5, -150, 0.5, -175)
+mainMenu.Size = UDim2.new(0, 300, 0, 380)
+mainMenu.Position = UDim2.new(0.5, -150, 0.5, -190)
 mainMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 mainMenu.BackgroundTransparency = 0.8
 mainMenu.BorderSizePixel = 2
@@ -39,7 +39,6 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0.02, 0)
 titleCorner.Parent = titleBar
 
--- Текст заголовка
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.6, 0, 1, 0)
 title.Position = UDim2.new(0.2, 0, 0, 0)
@@ -49,7 +48,7 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 title.Font = Enum.Font.GothamBold
 
--- Кнопки управления в заголовке
+-- Кнопки управления
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 25, 0, 25)
 closeButton.Position = UDim2.new(1, -30, 0, 2)
@@ -76,7 +75,7 @@ local minimizeCorner = Instance.new("UICorner")
 minimizeCorner.CornerRadius = UDim.new(0.5, 0)
 minimizeCorner.Parent = minimizeButton
 
--- Кнопка Rage
+-- Кнопка Rage (только для Rage режима)
 local rageButton = Instance.new("TextButton")
 rageButton.Size = UDim2.new(0, 70, 0, 70)
 rageButton.Position = UDim2.new(1, -80, 0, 100)
@@ -91,6 +90,20 @@ rageButton.Visible = false
 local rageCorner = Instance.new("UICorner")
 rageCorner.CornerRadius = UDim.new(0.2, 0)
 rageCorner.Parent = rageButton
+
+-- Кольцо для Legit режима
+local legitCircle = Instance.new("Frame")
+legitCircle.Size = UDim2.new(0, 50, 0, 50)
+legitCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+legitCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+legitCircle.BackgroundTransparency = 1
+legitCircle.BorderSizePixel = 2
+legitCircle.BorderColor3 = Color3.fromRGB(0, 255, 0)
+legitCircle.Visible = false
+
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = legitCircle
 
 -- Кнопка свернуть/развернуть меню
 local toggleMenuButton = Instance.new("TextButton")
@@ -112,13 +125,21 @@ toggleCorner.Parent = toggleMenuButton
 -- Настройки
 local SETTINGS = {
     AimBotEnabled = false,
+    Mode = "Legit", -- "Legit" или "Rage"
     RageEnabled = false,
-    ThroughWalls = false,  -- Можно вкл/выкл
+    ThroughWalls = false,
     ESPEnabled = true,
     MaxDistance = 500,
     AimSpeed = 0.3,
+    CircleRadius = 50, -- Ширина кольца для Legit
+    CanBreakAim = true, -- Срыв аим бота
     MenuVisible = true
 }
+
+-- Переменные для ESP
+local espFolders = {}
+local currentTarget = nil
+local isAiming = false
 
 -- Создаем элементы меню
 local function createToggle(settingName, displayName, currentVal, yPos)
@@ -153,12 +174,14 @@ local function createToggle(settingName, displayName, currentVal, yPos)
         toggle.Text = SETTINGS[settingName] and "ON" or "OFF"
         
         if settingName == "AimBotEnabled" then
-            rageButton.Visible = SETTINGS[settingName]
+            updateModeVisuals()
             if not SETTINGS[settingName] then
                 SETTINGS.RageEnabled = false
-                rageButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                rageButton.Text = "🔥\nRAGE"
             end
+        end
+        
+        if settingName == "ESPEnabled" and not SETTINGS[settingName] then
+            clearESP()
         end
     end)
     
@@ -212,6 +235,10 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
             SETTINGS[settingName] = num
             valueLabel.Text = tostring(num)
             valueBox.Text = tostring(num)
+            
+            if settingName == "CircleRadius" then
+                legitCircle.Size = UDim2.new(0, num, 0, num)
+            end
         else
             valueBox.Text = tostring(SETTINGS[settingName])
         end
@@ -225,6 +252,64 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     return container, valueLabel
 end
 
+-- Переключатель режимов
+local function createModeSwitch(yPos)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, -20, 0, 30)
+    container.Position = UDim2.new(0, 10, 0, yPos)
+    container.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.Text = "Режим:"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    
+    local legitButton = Instance.new("TextButton")
+    legitButton.Size = UDim2.new(0, 60, 0, 25)
+    legitButton.Position = UDim2.new(0.4, 0, 0, 0)
+    legitButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(100, 100, 100)
+    legitButton.Text = "LEGIT"
+    legitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    legitButton.TextSize = 9
+    
+    local rageButton = Instance.new("TextButton")
+    rageButton.Size = UDim2.new(0, 60, 0, 25)
+    rageButton.Position = UDim2.new(0.7, 0, 0, 0)
+    rageButton.BackgroundColor3 = SETTINGS.Mode == "Rage" and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 100, 100)
+    rageButton.Text = "RAGE"
+    rageButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    rageButton.TextSize = 9
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0.2, 0)
+    buttonCorner.Parent = legitButton
+    buttonCorner:Clone().Parent = rageButton
+    
+    legitButton.MouseButton1Click:Connect(function()
+        SETTINGS.Mode = "Legit"
+        legitButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        rageButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        updateModeVisuals()
+    end)
+    
+    rageButton.MouseButton1Click:Connect(function()
+        SETTINGS.Mode = "Rage"
+        rageButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        legitButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        updateModeVisuals()
+    end)
+    
+    container.Parent = mainMenu
+    label.Parent = container
+    legitButton.Parent = container
+    rageButton.Parent = container
+    
+    return container
+end
+
 -- Создаем элементы меню
 local yPos = 40
 
@@ -232,12 +317,20 @@ local yPos = 40
 createToggle("AimBotEnabled", "Включить Aim Bot", SETTINGS.AimBotEnabled, yPos)
 yPos = yPos + 30
 
+-- Переключатель режимов
+createModeSwitch(yPos)
+yPos = yPos + 35
+
 -- Наводка сквозь стены
 createToggle("ThroughWalls", "Наводка сквозь стены", SETTINGS.ThroughWalls, yPos)
 yPos = yPos + 30
 
 -- ESP
 createToggle("ESPEnabled", "ESP", SETTINGS.ESPEnabled, yPos)
+yPos = yPos + 30
+
+-- Срыв аим бота
+createToggle("CanBreakAim", "Срыв аим бота", SETTINGS.CanBreakAim, yPos)
 yPos = yPos + 30
 
 -- Дистанция
@@ -248,6 +341,9 @@ yPos = yPos + 50
 local speedSlider, speedLabel = createSlider("AimSpeed", "Скорость наводки", 0.1, 1, SETTINGS.AimSpeed, yPos)
 yPos = yPos + 50
 
+-- Ширина кольца (только для Legit)
+local circleSlider, circleLabel = createSlider("CircleRadius", "Ширина кольца", 10, 200, SETTINGS.CircleRadius, yPos)
+
 -- Добавляем все в GUI
 titleBar.Parent = mainMenu
 title.Parent = titleBar
@@ -255,8 +351,36 @@ closeButton.Parent = titleBar
 minimizeButton.Parent = titleBar
 mainMenu.Parent = screenGui
 rageButton.Parent = screenGui
+legitCircle.Parent = screenGui
 toggleMenuButton.Parent = screenGui
 screenGui.Parent = playerGui
+
+-- Функция обновления визуалов режимов
+function updateModeVisuals()
+    if SETTINGS.AimBotEnabled then
+        if SETTINGS.Mode == "Legit" then
+            rageButton.Visible = false
+            legitCircle.Visible = true
+            SETTINGS.RageEnabled = false
+        else -- Rage режим
+            rageButton.Visible = true
+            legitCircle.Visible = false
+        end
+    else
+        rageButton.Visible = false
+        legitCircle.Visible = false
+        SETTINGS.RageEnabled = false
+    end
+    
+    -- Обновляем кнопку Rage
+    if SETTINGS.RageEnabled then
+        rageButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        rageButton.Text = "🔥\nON"
+    else
+        rageButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        rageButton.Text = "🔥\nRAGE"
+    end
+end
 
 -- Обработка кнопок управления
 closeButton.MouseButton1Click:Connect(function()
@@ -278,26 +402,16 @@ end)
 
 -- Обработка кнопки Rage
 rageButton.MouseButton1Click:Connect(function()
-    if not SETTINGS.AimBotEnabled then return end
+    if not SETTINGS.AimBotEnabled or SETTINGS.Mode ~= "Rage" then return end
     
     SETTINGS.RageEnabled = not SETTINGS.RageEnabled
-    
-    if SETTINGS.RageEnabled then
-        rageButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        rageButton.Text = "🔥\nON"
-    else
-        rageButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        rageButton.Text = "🔥\nRAGE"
-    end
+    updateModeVisuals()
 end)
-
--- Переменные для Aim Bot
-local currentTarget = nil
 
 -- Функции Aim Bot
 function checkVisibility(targetPart)
     if SETTINGS.ThroughWalls then 
-        return true  -- Сквозь стены включено
+        return true
     end
     
     local character = player.Character
@@ -321,7 +435,48 @@ function checkVisibility(targetPart)
     return raycastResult == nil
 end
 
-function findTarget()
+-- Поиск цели для Legit режима (внутри кольца)
+function findTargetLegit()
+    local character = player.Character
+    if not character then return nil end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local camera = workspace.CurrentCamera
+    local centerScreen = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    local closestTarget = nil
+    local closestDistance = SETTINGS.CircleRadius
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local targetChar = otherPlayer.Character
+            local humanoid = targetChar:FindFirstChild("Humanoid")
+            local head = targetChar:FindFirstChild("Head")
+            
+            if head and humanoid and humanoid.Health > 0 then
+                local screenPoint, visible = camera:WorldToViewportPoint(head.Position)
+                
+                if visible then
+                    local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                    local distanceFromCenter = (targetPos - centerScreen).Magnitude
+                    local worldDistance = (root.Position - head.Position).Magnitude
+                    
+                    if distanceFromCenter <= closestDistance and worldDistance <= SETTINGS.MaxDistance and checkVisibility(head) then
+                        closestDistance = distanceFromCenter
+                        closestTarget = head
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestTarget
+end
+
+-- Поиск цели для Rage режима (любая видимая цель)
+function findTargetRage()
     local character = player.Character
     if not character then return nil end
     
@@ -348,7 +503,7 @@ function findTarget()
         end
     end
     
-    return closestTarget, closestDistance
+    return closestTarget
 end
 
 function aimAtTarget(targetPart)
@@ -366,24 +521,9 @@ function aimAtTarget(targetPart)
     camera.CFrame = currentCFrame:Lerp(targetCFrame, SETTINGS.AimSpeed)
 end
 
--- ESP функции
-local espFolders = {}
-
-function updateESP()
-    if not SETTINGS.ESPEnabled then
-        clearESP()
-        return
-    end
-    
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            createESP(otherPlayer)
-        end
-    end
-end
-
+-- ESP функции (оставляем как было)
 function createESP(targetPlayer)
-    if espFolders[targetPlayer] then return end
+    if espFolders[targetPlayer] then return espFolders[targetPlayer] end
     
     local folder = Instance.new("Folder")
     folder.Name = targetPlayer.Name .. "_ESP"
@@ -393,11 +533,11 @@ function createESP(targetPlayer)
     nameLabel.Name = "NameLabel"
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.TextSize = 10
-    nameLabel.Font = Enum.Font.Gotham
-    nameLabel.TextStrokeTransparency = 0.8
+    nameLabel.TextSize = 12
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextStrokeTransparency = 0
     nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    nameLabel.Size = UDim2.new(0, 80, 0, 15)
+    nameLabel.Size = UDim2.new(0, 100, 0, 20)
     nameLabel.Visible = false
     
     nameLabel.Parent = folder
@@ -406,39 +546,51 @@ function createESP(targetPlayer)
     return folder
 end
 
-function updateESPVisual(targetPlayer, distance, isVisible)
-    local folder = espFolders[targetPlayer]
-    if not folder then return end
+function updateESP()
+    if not SETTINGS.ESPEnabled then
+        clearESP()
+        return
+    end
     
-    local character = targetPlayer.Character
+    local character = player.Character
     if not character then return end
     
-    local head = character:FindFirstChild("Head")
-    if not head then return end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     
-    local camera = workspace.CurrentCamera
-    local headScreenPos, headVisible = camera:WorldToViewportPoint(head.Position)
-    
-    local nameLabel = folder:FindFirstChild("NameLabel")
-    
-    if headVisible then
-        local color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        
-        if nameLabel then
-            nameLabel.Visible = true
-            nameLabel.TextColor3 = color
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local targetChar = otherPlayer.Character
+            local humanoid = targetChar:FindFirstChild("Humanoid")
+            local head = targetChar:FindFirstChild("Head")
             
-            local shortName = targetPlayer.Name
-            if #shortName > 8 then
-                shortName = string.sub(shortName, 1, 6) .. ".."
+            if head and humanoid and humanoid.Health > 0 then
+                local folder = createESP(otherPlayer)
+                local nameLabel = folder:FindFirstChild("NameLabel")
+                
+                if nameLabel then
+                    local distance = (root.Position - head.Position).Magnitude
+                    local isVisible = checkVisibility(head)
+                    
+                    local camera = workspace.CurrentCamera
+                    local screenPoint, onScreen = camera:WorldToViewportPoint(head.Position)
+                    
+                    if onScreen then
+                        local color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                        
+                        nameLabel.Visible = true
+                        nameLabel.TextColor3 = color
+                        
+                        local shortName = otherPlayer.Name
+                        if #shortName > 8 then shortName = string.sub(shortName, 1, 8)..".." end
+                        
+                        nameLabel.Text = string.format("%s [%.0f]", shortName, distance)
+                        nameLabel.Position = UDim2.new(0, screenPoint.X - 50, 0, screenPoint.Y - 35)
+                    else
+                        nameLabel.Visible = false
+                    end
+                end
             end
-            
-            nameLabel.Text = string.format("%s [%.0f]", shortName, distance)
-            nameLabel.Position = UDim2.new(0, headScreenPos.X - 40, 0, headScreenPos.Y - 30)
-        end
-    else
-        if nameLabel then
-            nameLabel.Visible = false
         end
     end
 end
@@ -452,45 +604,50 @@ end
 
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
-    if SETTINGS.AimBotEnabled and SETTINGS.RageEnabled then
-        local target, distance = findTarget()
+    -- Aim Bot
+    if SETTINGS.AimBotEnabled then
+        local target = nil
+        
+        if SETTINGS.Mode == "Legit" then
+            -- Legit режим: ищем цели только внутри кольца
+            target = findTargetLegit()
+        elseif SETTINGS.Mode == "Rage" and SETTINGS.RageEnabled then
+            -- Rage режим: ищем любые видимые цели
+            target = findTargetRage()
+        end
         
         if target then
+            -- Проверка срыва прицела для Legit режима
+            if SETTINGS.Mode == "Legit" and SETTINGS.CanBreakAim and isAiming then
+                local camera = workspace.CurrentCamera
+                local screenPoint = camera:WorldToViewportPoint(target.Position)
+                local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+                local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                
+                if (targetPos - center).Magnitude > SETTINGS.CircleRadius then
+                    isAiming = false
+                    currentTarget = nil
+                    return
+                end
+            end
+            
             currentTarget = target
+            isAiming = true
             aimAtTarget(target)
         else
             currentTarget = nil
+            isAiming = false
         end
     else
         currentTarget = nil
+        isAiming = false
     end
     
-    -- Обновляем ESP для всех игроков
-    if SETTINGS.ESPEnabled then
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                local targetChar = otherPlayer.Character
-                local humanoid = targetChar:FindFirstChild("Humanoid")
-                local head = targetChar:FindFirstChild("Head")
-                
-                if head and humanoid and humanoid.Health > 0 then
-                    local distance = 0
-                    local playerRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if playerRoot then
-                        distance = (playerRoot.Position - head.Position).Magnitude
-                    end
-                    
-                    local isVisible = checkVisibility(head)
-                    updateESPVisual(otherPlayer, distance, isVisible)
-                end
-            end
-        end
-    else
-        clearESP()
-    end
+    -- ESP
+    updateESP()
 end)
 
--- Очистка при выходе игрока
+-- Очистка
 Players.PlayerRemoving:Connect(function(leftPlayer)
     if espFolders[leftPlayer] then
         espFolders[leftPlayer]:Destroy()
@@ -498,7 +655,15 @@ Players.PlayerRemoving:Connect(function(leftPlayer)
     end
 end)
 
+player.CharacterAdded:Connect(function()
+    clearESP()
+end)
+
+-- Инициализация
+legitCircle.Size = UDim2.new(0, SETTINGS.CircleRadius, 0, SETTINGS.CircleRadius)
+updateModeVisuals()
+
 print("🎯 AIM BOT MENU ЗАГРУЖЕНО!")
-print("Механика стен: ВКЛ/ВЫКЛ")
-print("ESP: ВКЛ/ВЫКЛ")
-print("Срыв aim bot: УБРАН")
+print("Два режима: Legit и Rage")
+print("Legit: кольцо + срыв аим бота")
+print("Rage: кнопка Rage + 360° прицел")
