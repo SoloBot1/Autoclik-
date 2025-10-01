@@ -14,8 +14,8 @@ screenGui.ResetOnSpawn = false
 
 -- Основное меню
 local mainMenu = Instance.new("Frame")
-mainMenu.Size = UDim2.new(0, 320, 0, 400)
-mainMenu.Position = UDim2.new(0.5, -160, 0.5, -200)
+mainMenu.Size = UDim2.new(0, 320, 0, 450)
+mainMenu.Position = UDim2.new(0.5, -160, 0.5, -225)
 mainMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 mainMenu.BackgroundTransparency = 0.1
 mainMenu.BorderSizePixel = 3
@@ -50,7 +50,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0.6, 0, 1, 0)
 title.Position = UDim2.new(0.2, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "🔫 AIM BOT PRO"
+title.Text = "🔫 AIM BOT"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 16
 title.Font = Enum.Font.GothamBlack
@@ -84,35 +84,37 @@ local minimizeCorner = Instance.new("UICorner")
 minimizeCorner.CornerRadius = UDim.new(0.5, 0)
 minimizeCorner.Parent = minimizeButton
 
--- Кнопка Rage/Legit (главная кнопка)
-local modeButton = Instance.new("TextButton")
-modeButton.Size = UDim2.new(0, 70, 0, 70)
-modeButton.Position = UDim2.new(1, -80, 0, 100)
-modeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-modeButton.BackgroundTransparency = 0.3
-modeButton.Text = "🔥\nRAGE"
-modeButton.TextSize = 12
-modeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-modeButton.TextWrapped = true
-modeButton.Visible = false
+-- Главная кнопка Aim Bot
+local aimButton = Instance.new("TextButton")
+aimButton.Size = UDim2.new(0, 70, 0, 70)
+aimButton.Position = UDim2.new(1, -80, 0, 100)
+aimButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+aimButton.BackgroundTransparency = 0.3
+aimButton.Text = "🎯\nOFF"
+aimButton.TextSize = 12
+aimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimButton.TextWrapped = true
+aimButton.Visible = false
 
-local modeButtonCorner = Instance.new("UICorner")
-modeButtonCorner.CornerRadius = UDim.new(0.2, 0)
-modeButtonCorner.Parent = modeButton
+local aimButtonCorner = Instance.new("UICorner")
+aimButtonCorner.CornerRadius = UDim.new(0.2, 0)
+aimButtonCorner.Parent = aimButton
 
--- Кольцо для Legit режима (делаем видимым)
-local legitCircle = Instance.new("Frame")
-legitCircle.Size = UDim2.new(0, 50, 0, 50)
-legitCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-legitCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-legitCircle.BackgroundTransparency = 1
-legitCircle.BorderSizePixel = 2
-legitCircle.BorderColor3 = Color3.fromRGB(0, 255, 0)
-legitCircle.Visible = false
+-- Круг прицеливания (полностью настраиваемый)
+local aimCircle = Instance.new("Frame")
+aimCircle.Size = UDim2.new(0, 100, 0, 100)
+aimCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+aimCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+aimCircle.BackgroundTransparency = 1
+aimCircle.BorderSizePixel = 2
+aimCircle.BorderColor3 = Color3.fromRGB(0, 255, 0)
+aimCircle.Visible = false
+aimCircle.Active = true
+aimCircle.Draggable = true  -- Можно двигать
 
 local circleCorner = Instance.new("UICorner")
 circleCorner.CornerRadius = UDim.new(1, 0)
-circleCorner.Parent = legitCircle
+circleCorner.Parent = aimCircle
 
 -- Кнопка свернуть/развернуть меню
 local toggleMenuButton = Instance.new("TextButton")
@@ -134,14 +136,14 @@ toggleCorner.Parent = toggleMenuButton
 -- Настройки
 local SETTINGS = {
     AimBotEnabled = false,
-    Mode = "Rage", -- "Legit" или "Rage"
-    RageEnabled = false,
-    LegitEnabled = false,
     ThroughWalls = false,
     ESPEnabled = true,
     MaxDistance = 500,
     AimSpeed = 0.3,
-    CircleRadius = 50,
+    CircleRadius = 100,      -- Размер круга
+    CircleFOV = 360,         -- Угол обзора (360 = везде)
+    CircleX = 0.5,           -- Позиция X (0-1)
+    CircleY = 0.5,           -- Позиция Y (0-1)
     CanBreakAim = true,
     MenuVisible = true
 }
@@ -184,11 +186,11 @@ local function createToggle(settingName, displayName, currentVal, yPos)
         toggle.Text = SETTINGS[settingName] and "ON" or "OFF"
         
         if settingName == "AimBotEnabled" then
-            modeButton.Visible = SETTINGS[settingName]
+            aimButton.Visible = SETTINGS[settingName]
             if not SETTINGS[settingName] then
-                SETTINGS.RageEnabled = false
-                SETTINGS.LegitEnabled = false
-                updateModeButton()
+                aimButton.Text = "🎯\nOFF"
+                aimButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+                aimCircle.Visible = false
             end
         end
         
@@ -204,7 +206,7 @@ local function createToggle(settingName, displayName, currentVal, yPos)
     return container
 end
 
-local function createSlider(settingName, displayName, minVal, maxVal, currentVal, yPos)
+local function createSlider(settingName, displayName, minVal, maxVal, currentVal, yPos, isPosition)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, -20, 0, 45)
     container.Position = UDim2.new(0, 10, 0, yPos)
@@ -249,7 +251,11 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
             valueBox.Text = tostring(num)
             
             if settingName == "CircleRadius" then
-                legitCircle.Size = UDim2.new(0, num, 0, num)
+                aimCircle.Size = UDim2.new(0, num, 0, num)
+            elseif settingName == "CircleX" then
+                aimCircle.Position = UDim2.new(SETTINGS.CircleX, 0, SETTINGS.CircleY, 0)
+            elseif settingName == "CircleY" then
+                aimCircle.Position = UDim2.new(SETTINGS.CircleX, 0, SETTINGS.CircleY, 0)
             end
         else
             valueBox.Text = tostring(SETTINGS[settingName])
@@ -264,74 +270,30 @@ local function createSlider(settingName, displayName, minVal, maxVal, currentVal
     return container, valueLabel
 end
 
--- Переключатель режимов
-local function createModeSwitch(yPos)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -20, 0, 30)
-    container.Position = UDim2.new(0, 10, 0, yPos)
-    container.BackgroundTransparency = 1
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.4, 0, 1, 0)
-    label.Text = "Режим:"
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 11
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.BackgroundTransparency = 1
-    
-    local legitButton = Instance.new("TextButton")
-    legitButton.Size = UDim2.new(0, 60, 0, 25)
-    legitButton.Position = UDim2.new(0.4, 0, 0, 0)
-    legitButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(100, 100, 100)
-    legitButton.Text = "LEGIT"
-    legitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    legitButton.TextSize = 9
-    
-    local rageButton = Instance.new("TextButton")
-    rageButton.Size = UDim2.new(0, 60, 0, 25)
-    rageButton.Position = UDim2.new(0.7, 0, 0, 0)
-    rageButton.BackgroundColor3 = SETTINGS.Mode == "Rage" and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 100, 100)
-    rageButton.Text = "RAGE"
-    rageButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rageButton.TextSize = 9
-    
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0.2, 0)
-    buttonCorner.Parent = legitButton
-    buttonCorner:Clone().Parent = rageButton
-    
-    legitButton.MouseButton1Click:Connect(function()
-        SETTINGS.Mode = "Legit"
-        legitButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-        rageButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        updateModeButton()
-    end)
-    
-    rageButton.MouseButton1Click:Connect(function()
-        SETTINGS.Mode = "Rage"
-        rageButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        legitButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        updateModeButton()
-    end)
-    
-    container.Parent = mainMenu
-    label.Parent = container
-    legitButton.Parent = container
-    rageButton.Parent = container
-    
-    return container
-end
-
 -- Создаем элементы меню
 local yPos = 45
+
+-- Основные настройки
+local function createSection(text, yPos)
+    local section = Instance.new("TextLabel")
+    section.Size = UDim2.new(1, -20, 0, 20)
+    section.Position = UDim2.new(0, 10, 0, yPos)
+    section.BackgroundTransparency = 1
+    section.Text = "► " .. text
+    section.TextColor3 = Color3.fromRGB(255, 100, 100)
+    section.TextSize = 12
+    section.Font = Enum.Font.GothamBold
+    section.TextXAlignment = Enum.TextXAlignment.Left
+    section.Parent = mainMenu
+    return section
+end
+
+createSection("ОСНОВНЫЕ НАСТРОЙКИ", yPos)
+yPos = yPos + 25
 
 -- Включить Aim Bot
 createToggle("AimBotEnabled", "Включить Aim Bot", SETTINGS.AimBotEnabled, yPos)
 yPos = yPos + 30
-
--- Переключатель режимов
-createModeSwitch(yPos)
-yPos = yPos + 35
 
 -- Наводка сквозь стены
 createToggle("ThroughWalls", "Наводка сквозь стены", SETTINGS.ThroughWalls, yPos)
@@ -345,6 +307,9 @@ yPos = yPos + 30
 createToggle("CanBreakAim", "Срыв аим бота", SETTINGS.CanBreakAim, yPos)
 yPos = yPos + 30
 
+createSection("ПРИЦЕЛИВАНИЕ", yPos)
+yPos = yPos + 25
+
 -- Дистанция
 local distanceSlider, distanceLabel = createSlider("MaxDistance", "Дистанция", 1, 1000, SETTINGS.MaxDistance, yPos)
 yPos = yPos + 50
@@ -353,8 +318,23 @@ yPos = yPos + 50
 local speedSlider, speedLabel = createSlider("AimSpeed", "Скорость наводки", 0.1, 1, SETTINGS.AimSpeed, yPos)
 yPos = yPos + 50
 
--- Ширина кольца
-local circleSlider, circleLabel = createSlider("CircleRadius", "Ширина кольца", 10, 200, SETTINGS.CircleRadius, yPos)
+createSection("НАСТРОЙКА КРУГА", yPos)
+yPos = yPos + 25
+
+-- Размер круга
+local radiusSlider, radiusLabel = createSlider("CircleRadius", "Размер круга", 10, 500, SETTINGS.CircleRadius, yPos)
+yPos = yPos + 50
+
+-- Угол обзора
+local fovSlider, fovLabel = createSlider("CircleFOV", "Угол обзора", 1, 360, SETTINGS.CircleFOV, yPos)
+yPos = yPos + 50
+
+-- Позиция X
+local posXSlider, posXLabel = createSlider("CircleX", "Позиция X", 0, 1, SETTINGS.CircleX, yPos, true)
+yPos = yPos + 50
+
+-- Позиция Y
+local posYSlider, posYLabel = createSlider("CircleY", "Позиция Y", 0, 1, SETTINGS.CircleY, yPos, true)
 
 -- Добавляем все в GUI
 titleBar.Parent = mainMenu
@@ -362,31 +342,10 @@ title.Parent = titleBar
 closeButton.Parent = titleBar
 minimizeButton.Parent = titleBar
 mainMenu.Parent = screenGui
-modeButton.Parent = screenGui
-legitCircle.Parent = screenGui
+aimButton.Parent = screenGui
+aimCircle.Parent = screenGui
 toggleMenuButton.Parent = screenGui
 screenGui.Parent = playerGui
-
--- Функция обновления кнопки режима
-function updateModeButton()
-    if SETTINGS.Mode == "Legit" then
-        modeButton.Text = "🎯\nLEGIT"
-        modeButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-        legitCircle.Visible = SETTINGS.LegitEnabled
-    else
-        modeButton.Text = "🔥\nRAGE"
-        modeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        legitCircle.Visible = false
-    end
-    
-    if SETTINGS.RageEnabled or SETTINGS.LegitEnabled then
-        modeButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 255, 0)
-        modeButton.Text = SETTINGS.Mode == "Legit" and "🎯\nON" or "🔥\nON"
-    else
-        modeButton.BackgroundColor3 = SETTINGS.Mode == "Legit" and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(255, 50, 50)
-        modeButton.Text = SETTINGS.Mode == "Legit" and "🎯\nLEGIT" or "🔥\nRAGE"
-    end
-end
 
 -- Обработка кнопок управления
 closeButton.MouseButton1Click:Connect(function()
@@ -406,24 +365,52 @@ toggleMenuButton.MouseButton1Click:Connect(function()
     toggleMenuButton.Visible = false
 end)
 
--- Обработка главной кнопки режима
-modeButton.MouseButton1Click:Connect(function()
+-- Обработка главной кнопки
+aimButton.MouseButton1Click:Connect(function()
     if not SETTINGS.AimBotEnabled then return end
     
-    if SETTINGS.Mode == "Legit" then
-        SETTINGS.LegitEnabled = not SETTINGS.LegitEnabled
-        SETTINGS.RageEnabled = false
-        legitCircle.Visible = SETTINGS.LegitEnabled
-    else
-        SETTINGS.RageEnabled = not SETTINGS.RageEnabled
-        SETTINGS.LegitEnabled = false
-        legitCircle.Visible = false
-    end
+    local isActive = aimButton.Text:find("ON")
     
-    updateModeButton()
+    if isActive then
+        aimButton.Text = "🎯\nOFF"
+        aimButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        aimCircle.Visible = false
+    else
+        aimButton.Text = "🎯\nON"
+        aimButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        aimCircle.Visible = true
+    end
 end)
 
--- Функции Aim Bot (остаются как были)
+-- Функция проверки находится ли цель в круге
+function isTargetInCircle(targetPart)
+    local character = player.Character
+    if not character or not targetPart then return false end
+    
+    local camera = workspace.CurrentCamera
+    local targetScreenPos, visible = camera:WorldToViewportPoint(targetPart.Position)
+    
+    if not visible then return false end
+    
+    -- Получаем позицию круга на экране
+    local circleScreenPos = Vector2.new(
+        camera.ViewportSize.X * SETTINGS.CircleX,
+        camera.ViewportSize.Y * SETTINGS.CircleY
+    )
+    
+    local targetPos = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
+    local distance = (targetPos - circleScreenPos).Magnitude
+    
+    -- Если FOV = 360, то цель всегда в круге
+    if SETTINGS.CircleFOV == 360 then
+        return true
+    end
+    
+    -- Проверяем расстояние до центра круга
+    return distance <= (SETTINGS.CircleRadius / 2)
+end
+
+-- Функции Aim Bot
 function checkVisibility(targetPart)
     if SETTINGS.ThroughWalls then return true end
     
@@ -448,46 +435,7 @@ function checkVisibility(targetPart)
     return raycastResult == nil
 end
 
-function findTargetLegit()
-    local character = player.Character
-    if not character then return nil end
-    
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if not root then return nil end
-    
-    local camera = workspace.CurrentCamera
-    local centerScreen = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-    
-    local closestTarget = nil
-    local closestDistance = SETTINGS.CircleRadius
-    
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            local targetChar = otherPlayer.Character
-            local humanoid = targetChar:FindFirstChild("Humanoid")
-            local head = targetChar:FindFirstChild("Head")
-            
-            if head and humanoid and humanoid.Health > 0 then
-                local screenPoint, visible = camera:WorldToViewportPoint(head.Position)
-                
-                if visible then
-                    local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
-                    local distanceFromCenter = (targetPos - centerScreen).Magnitude
-                    local worldDistance = (root.Position - head.Position).Magnitude
-                    
-                    if distanceFromCenter <= closestDistance and worldDistance <= SETTINGS.MaxDistance and checkVisibility(head) then
-                        closestDistance = distanceFromCenter
-                        closestTarget = head
-                    end
-                end
-            end
-        end
-    end
-    
-    return closestTarget
-end
-
-function findTargetRage()
+function findTarget()
     local character = player.Character
     if not character then return nil end
     
@@ -505,8 +453,10 @@ function findTargetRage()
             
             if head and humanoid and humanoid.Health > 0 then
                 local distance = (root.Position - head.Position).Magnitude
+                local inCircle = isTargetInCircle(head)
+                local visible = checkVisibility(head)
                 
-                if distance <= closestDistance and checkVisibility(head) then
+                if distance <= closestDistance and inCircle and visible then
                     closestDistance = distance
                     closestTarget = head
                 end
@@ -623,24 +573,15 @@ end
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
     -- Aim Bot
-    if SETTINGS.AimBotEnabled then
-        local target = nil
-        
-        if SETTINGS.Mode == "Legit" and SETTINGS.LegitEnabled then
-            target = findTargetLegit()
-        elseif SETTINGS.Mode == "Rage" and SETTINGS.RageEnabled then
-            target = findTargetRage()
-        end
+    local isActive = aimButton.Text:find("ON") and SETTINGS.AimBotEnabled
+    
+    if isActive then
+        local target = findTarget()
         
         if target then
-            -- Проверка срыва прицела для Legit режима
-            if SETTINGS.Mode == "Legit" and SETTINGS.CanBreakAim and isAiming then
-                local camera = workspace.CurrentCamera
-                local screenPoint = camera:WorldToViewportPoint(target.Position)
-                local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-                local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
-                
-                if (targetPos - center).Magnitude > SETTINGS.CircleRadius then
+            -- Проверка срыва прицела
+       if SETTINGS.CanBreakAim and isAiming then
+                if not isTargetInCircle(target) then
                     isAiming = false
                     currentTarget = nil
                     return
@@ -676,9 +617,10 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- Инициализация
-legitCircle.Size = UDim2.new(0, SETTINGS.CircleRadius, 0, SETTINGS.CircleRadius)
-updateModeButton()
+aimCircle.Size = UDim2.new(0, SETTINGS.CircleRadius, 0, SETTINGS.CircleRadius)
+aimCircle.Position = UDim2.new(SETTINGS.CircleX, 0, SETTINGS.CircleY, 0)
 
-print("🎯 AIM BOT PRO ЗАГРУЖЕНО!")
-print("Старая система кнопок возвращена!")
-print("Кольцо теперь видно!")
+print("🎯 AIM BOT ЗАГРУЖЕНО!")
+print("Один режим с настраиваемым кругом")
+print("FOV 360 = прицел везде")
+print("Круг можно двигать и менять размер")
